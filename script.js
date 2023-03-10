@@ -26,7 +26,12 @@ function parseLine(line) {
             parse022_0240_postalCodeCountry(line)
         }
     } else if (code === "042") {
-        parse022_0285(line)
+        const transactionCode = line.substring(13, 17)
+        if(transactionCode === "0285") {
+            parse022_0285(line)
+        } else {
+            parse022_0280(line)
+        }
     } else if (code === "052") {
         parse022_0241(line)
     } else if (code === "092") {
@@ -101,6 +106,24 @@ function parse022_0285(line) {
             signCode: line.substring(59, 60),
             amount: line.substring(60, 73),
             reference: line.substring(73, 82),
+            payerIdentification: line.substring(105, 120),
+        }
+    )
+}
+
+function parse022_0280(line) {
+    currentSection.collections.push(
+        {
+            type: "collection",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            mandateNumber: line.substring(42, 51),
+            date: line.substring(51, 59),
+            signCode: line.substring(59, 60),
+            amount: line.substring(60, 73),
+            reference: line.substring(73, 103),
             payerIdentification: line.substring(105, 120),
         }
     )
