@@ -27,10 +27,20 @@ function parseLine(line) {
         }
     } else if (code === "042") {
         const transactionCode = line.substring(13, 17)
-        if(transactionCode === "0285") {
+        if (transactionCode === "0285") {
             parse022_0285(line)
-        } else {
+        } else if (transactionCode === "0280") {
             parse022_0280(line)
+        } else if (transactionCode === "0230") {
+            parse022_0230(line)
+        } else if (transactionCode === "0231") {
+            parse022_0231(line)
+        } else if (transactionCode === "0232") {
+            parse022_0232(line)
+        } else if (transactionCode === "0233") {
+            parse022_0233(line)
+        } else if (transactionCode === "0234") {
+            parse022_0234(line)
         }
     } else if (code === "052") {
         parse022_0241(line)
@@ -125,6 +135,76 @@ function parse022_0280(line) {
             amount: line.substring(60, 73),
             reference: line.substring(73, 103),
             payerIdentification: line.substring(105, 120),
+        }
+    )
+}
+
+function parse022_0230(line) {
+    currentSection.collections.push(
+        {
+            type: "mandateActive",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0231(line) {
+    currentSection.collections.push(
+        {
+            type: "mandateRegistered",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            endDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0232(line) {
+    currentSection.collections.push(
+        {
+            type: "mandateCancelledByBank",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0233(line) {
+    currentSection.collections.push(
+        {
+            type: "mandateCancelledByCreditor",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0234(line) {
+    currentSection.collections.push(
+        {
+            type: "mandateCancelledByBetalingsservice",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
         }
     )
 }
