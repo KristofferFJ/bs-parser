@@ -71,14 +71,14 @@ function parse012(line) {
             date: line.substring(46, 54),
             mainTextLine: line.substring(68, 128),
         },
-        collections: [],
+        lines: [],
         end: ""
     }
     parsedBs.sections.push(currentSection)
 }
 
 function parse022_0240_debtorName(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "debtorNameAndAddress",
             creditorPbs: line.substring(5, 13),
@@ -91,7 +91,7 @@ function parse022_0240_debtorName(line) {
 }
 
 function parse022_0240_postalCodeCountry(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "postalCodeCountry",
             creditorPbs: line.substring(5, 13),
@@ -105,7 +105,7 @@ function parse022_0240_postalCodeCountry(line) {
 }
 
 function parse022_0285(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "paymentSlip",
             creditorPbs: line.substring(5, 13),
@@ -122,7 +122,7 @@ function parse022_0285(line) {
 }
 
 function parse022_0280(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "collection",
             creditorPbs: line.substring(5, 13),
@@ -140,7 +140,7 @@ function parse022_0280(line) {
 }
 
 function parse022_0230(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "mandateActive",
             creditorPbs: line.substring(5, 13),
@@ -154,7 +154,7 @@ function parse022_0230(line) {
 }
 
 function parse022_0231(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "mandateRegistered",
             creditorPbs: line.substring(5, 13),
@@ -168,7 +168,7 @@ function parse022_0231(line) {
 }
 
 function parse022_0232(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "mandateCancelledByBank",
             creditorPbs: line.substring(5, 13),
@@ -182,7 +182,7 @@ function parse022_0232(line) {
 }
 
 function parse022_0233(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "mandateCancelledByCreditor",
             creditorPbs: line.substring(5, 13),
@@ -196,7 +196,7 @@ function parse022_0233(line) {
 }
 
 function parse022_0234(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "mandateCancelledByBetalingsservice",
             creditorPbs: line.substring(5, 13),
@@ -210,7 +210,7 @@ function parse022_0234(line) {
 }
 
 function parse022_0241(line) {
-    currentSection.collections.push(
+    currentSection.lines.push(
         {
             type: "textToDebtor",
             creditorPbs: line.substring(5, 13),
