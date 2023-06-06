@@ -43,6 +43,10 @@ function parseLine(line) {
             parse022_0234(line)
         } else if (transactionCode === "0236") {
             parse022_0236(line)
+        } else if (transactionCode === "0297") {
+            parse022_0297(line)
+        } else if (transactionCode === "0299") {
+            parse022_0299(line)
         }
     } else if (code === "052") {
         parse022_0241(line)
@@ -226,6 +230,48 @@ function parse022_0236(line) {
             paymentDate: line.substring(103, 109),
             bookkeepingEntryDate: line.substring(109, 115),
             paymentAmount: line.substring(116, 128),
+        }
+    )
+}
+
+function parse022_0297(line) {
+    currentSection.lines.push(
+        {
+            type: "paymentByPaymentSlipCompleted",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(29, 44),
+            paymentSlipType: line.substring(44, 46),
+            codeForRejectionFee: line.substring(46, 47),
+            feeAmount: line.substring(47, 52),
+            paymentDueDate: line.substring(52, 58),
+            signCode: line.substring(58, 59),
+            amount: line.substring(59, 72),
+            reference: line.substring(72, 81),
+            paymentDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            paymentAmount: line.substring(116, 128),
+        }
+    )
+}
+
+function parse022_0299(line) {
+    currentSection.lines.push(
+        {
+            type: "paymentByPaymentSlipChargedBack",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(29, 44),
+            paymentSlipType: line.substring(44, 46),
+            feeCode: line.substring(46, 47),
+            feeAmount: line.substring(47, 52),
+            date: line.substring(52, 58),
+            signCode: line.substring(58, 59),
+            amount: line.substring(59, 72),
+            reference: line.substring(72, 81),
+            chargeBackDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            chargeBackAmount: line.substring(116, 128),
         }
     )
 }
