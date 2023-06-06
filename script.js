@@ -41,6 +41,8 @@ function parseLine(line) {
             parse022_0233(line)
         } else if (transactionCode === "0234") {
             parse022_0234(line)
+        } else if (transactionCode === "0236") {
+            parse022_0236(line)
         }
     } else if (code === "052") {
         parse022_0241(line)
@@ -205,6 +207,25 @@ function parse022_0234(line) {
             mandateNumber: line.substring(40, 49),
             effectiveDate: line.substring(49, 55),
             deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0236(line) {
+    currentSection.lines.push(
+        {
+            type: "automatedPaymentCompleted",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            date: line.substring(49, 55),
+            signCode: line.substring(55, 56),
+            amount: line.substring(56, 69),
+            reference: line.substring(69, 99),
+            paymentDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            paymentAmount: line.substring(116, 128),
         }
     )
 }
