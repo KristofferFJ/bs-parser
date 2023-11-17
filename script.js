@@ -1,75 +1,314 @@
-document.getElementById("year").defaultValue = new Date().getFullYear();
-document.getElementById("month").defaultValue = new Date().getMonth() + 1;
+let parsedBs
+let currentSection
 
-function getNinthLastBankDay() {
-    let year = document.getElementById("year").value
-    let month = document.getElementById("month").value
-    let eligibleDay = new Date()
-    eligibleDay.setFullYear(year, month, 1)
-    eligibleDay.setDate(eligibleDay.getDate() - 1)
-    let bankDays = 0
-    let bankHolidays = getBankHolidays(year)
+function parseBS() {
+    parsedBs = {
+        start: "",
+        sections: [],
+        end: ""
+    }
+    document.getElementById("bsInput").value.split("\n").map((line) => parseLine(line))
+    document.getElementById("output").innerHTML = JSON.stringify(parsedBs, null, 2);
+}
 
-    while (true) {
-        if(eligibleDay.getDay() !== 0 && eligibleDay.getDay() !== 6 && !isBankHoliday(eligibleDay, bankHolidays)) {
-            bankDays += 1
+function parseLine(line) {
+    let parsed = "unable to parse"
+    const code = line.substring(2, 5)
+    if (code === "002") {
+        parse002Start(line)
+    } else if (code === "012") {
+        parse012(line)
+    } else if (code === "022") {
+        const dataRecordNumber = line.substring(21, 22)
+        if (dataRecordNumber < 6) {
+            parse022_0240_debtorName(line)
+        } else {
+            parse022_0240_postalCodeCountry(line)
         }
-        if(bankDays === 9) break
-        eligibleDay.setDate(eligibleDay.getDate() - 1)
+    } else if (code === "042") {
+        const transactionCode = line.substring(13, 17)
+        if (transactionCode === "0285") {
+            parse022_0285(line)
+        } else if (transactionCode === "0280") {
+            parse022_0280(line)
+        } else if (transactionCode === "0230") {
+            parse022_0230(line)
+        } else if (transactionCode === "0231") {
+            parse022_0231(line)
+        } else if (transactionCode === "0232") {
+            parse022_0232(line)
+        } else if (transactionCode === "0233") {
+            parse022_0233(line)
+        } else if (transactionCode === "0234") {
+            parse022_0234(line)
+        } else if (transactionCode === "0236") {
+            parse022_0236(line)
+        } else if (transactionCode === "0297") {
+            parse022_0297(line)
+        } else if (transactionCode === "0299") {
+            parse022_0299(line)
+        }
+    } else if (code === "052") {
+        parse022_0241(line)
+    } else if (code === "092") {
+        parse022_0117(line)
+    } else if (code === "992") {
+        parse002End(line)
     }
-
-    document.getElementById("output").innerHTML = formatDate(eligibleDay);
+    return line + "\n\t" + parsed
 }
 
-function isBankHoliday(eligibleDay, bankHolidays) {
-    for(let bankHoliday of bankHolidays) {
-        if (formatDate(bankHoliday) === formatDate(eligibleDay)) return true
+function parse002Start(line) {
+    parsedBs.start = {
+        cvr: line.substring(5, 13),
+        subsystem: line.substring(13, 16),
+        deliveryType: line.substring(16, 20),
+        deliveryIdentification: line.substring(20, 30),
+        date: line.substring(49, 55),
     }
-    return false
 }
 
-function formatDate(date) {
-    return date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0")
+function parse012(line) {
+    currentSection = {
+        start: {
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(22, 27),
+            dataSupplierIdentification: line.substring(27, 42),
+            date: line.substring(46, 54),
+            mainTextLine: line.substring(68, 128),
+        },
+        lines: [],
+        end: ""
+    }
+    parsedBs.sections.push(currentSection)
 }
 
-function getGregorianEasterSunday(year) {
-    const a = year % 19;
-    const b = Math.floor(year / 100);
-    const c = year % 100;
-    const d = Math.floor(b / 4);
-    const e = b % 4;
-    const f = Math.floor((b + 8) / 25);
-    const g = Math.floor((b - f + 1) / 3);
-    const h = (19 * a + b - d - g + 15) % 30;
-    const i = Math.floor(c / 4);
-    const j = c % 4;
-    const k = (32 + 2 * e + 2 * i - h - j) % 7;
-    const l = Math.floor((a + 11 * h + 22 * k) / 451);
-    const x = h + k - 7 * l + 114;
-    const month = Math.floor(x / 31);
-    const day = (x % 31) + 1;
-
-    return new Date(year, month - 1, day);
+function parse022_0240_debtorName(line) {
+    currentSection.lines.push(
+        {
+            type: "debtorNameAndAddress",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            name: line.substring(51, 86),
+        }
+    )
 }
 
-function getBankHolidays(year) {
-    const easterSunday = getGregorianEasterSunday(year);
+function parse022_0240_postalCodeCountry(line) {
+    currentSection.lines.push(
+        {
+            type: "postalCodeCountry",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            postalCode: line.substring(66, 70),
+            countryCode: line.substring(70, 73),
+        }
+    )
+}
 
-    return new Set([
-        new Date(year, 0, 1), // New Year's Day (January 1)
-        new Date(year, 5, 5), // Constitution Day (June 5)
-        new Date(year, 11, 24), // Christmas Eve (December 24)
-        new Date(year, 11, 25), // Christmas Day (December 25)
-        new Date(year, 11, 26), // Boxing Day (December 26)
-        new Date(year, 11, 31), // New Year's Eve (December 31)
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() - 2), // Good Friday
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() - 3), // Maundy Thursday
-        easterSunday, // Easter Sunday
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 1), // Easter Monday
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 26), // Great Prayer Day, 4th Friday after Easter
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 39), // Ascension Day
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 40), // Day after Ascension Day
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 49), // Pentecost
-        new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 50)  // Whit Monday
-    ]);
+function parse022_0285(line) {
+    currentSection.lines.push(
+        {
+            type: "paymentSlip",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            date: line.substring(51, 59),
+            signCode: line.substring(59, 60),
+            amount: line.substring(60, 73),
+            reference: line.substring(73, 82),
+            payerIdentification: line.substring(105, 120),
+        }
+    )
+}
+
+function parse022_0280(line) {
+    currentSection.lines.push(
+        {
+            type: "collection",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            mandateNumber: line.substring(42, 51),
+            date: line.substring(51, 59),
+            signCode: line.substring(59, 60),
+            amount: line.substring(60, 73),
+            reference: line.substring(73, 103),
+            payerIdentification: line.substring(105, 120),
+        }
+    )
+}
+
+function parse022_0230(line) {
+    currentSection.lines.push(
+        {
+            type: "mandateActive",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0231(line) {
+    currentSection.lines.push(
+        {
+            type: "mandateRegistered",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            endDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0232(line) {
+    currentSection.lines.push(
+        {
+            type: "mandateCancelledByBank",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0233(line) {
+    currentSection.lines.push(
+        {
+            type: "mandateCancelledByCreditor",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0234(line) {
+    currentSection.lines.push(
+        {
+            type: "mandateCancelledByBetalingsservice",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            effectiveDate: line.substring(49, 55),
+            deletionDate: line.substring(55, 61),
+        }
+    )
+}
+
+function parse022_0236(line) {
+    currentSection.lines.push(
+        {
+            type: "automatedPaymentCompleted",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(25, 40),
+            mandateNumber: line.substring(40, 49),
+            date: line.substring(49, 55),
+            signCode: line.substring(55, 56),
+            amount: line.substring(56, 69),
+            reference: line.substring(69, 99),
+            paymentDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            paymentAmount: line.substring(116, 128),
+        }
+    )
+}
+
+function parse022_0297(line) {
+    currentSection.lines.push(
+        {
+            type: "paymentByPaymentSlipCompleted",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(29, 44),
+            paymentSlipType: line.substring(44, 46),
+            codeForRejectionFee: line.substring(46, 47),
+            feeAmount: line.substring(47, 52),
+            paymentDueDate: line.substring(52, 58),
+            signCode: line.substring(58, 59),
+            amount: line.substring(59, 72),
+            reference: line.substring(72, 81),
+            paymentDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            paymentAmount: line.substring(116, 128),
+        }
+    )
+}
+
+function parse022_0299(line) {
+    currentSection.lines.push(
+        {
+            type: "paymentByPaymentSlipChargedBack",
+            creditorPbs: line.substring(5, 13),
+            debtorGroupNumber: line.substring(20, 25),
+            customerNumber: line.substring(29, 44),
+            paymentSlipType: line.substring(44, 46),
+            feeCode: line.substring(46, 47),
+            feeAmount: line.substring(47, 52),
+            date: line.substring(52, 58),
+            signCode: line.substring(58, 59),
+            amount: line.substring(59, 72),
+            reference: line.substring(72, 81),
+            chargeBackDate: line.substring(103, 109),
+            bookkeepingEntryDate: line.substring(109, 115),
+            chargeBackAmount: line.substring(116, 128),
+        }
+    )
+}
+
+function parse022_0241(line) {
+    currentSection.lines.push(
+        {
+            type: "textToDebtor",
+            creditorPbs: line.substring(5, 13),
+            dataRecordNumber: line.substring(17, 22),
+            debtorGroupNumber: line.substring(22, 27),
+            customerNumber: line.substring(27, 42),
+            textLine: line.substring(52, 112),
+        }
+    )
+}
+
+function parse022_0117(line) {
+    currentSection.end = {
+        creditorPbs: line.substring(5, 13),
+        debtorGroupNumber: line.substring(22, 27),
+        numberOfRecord042: line.substring(31, 42),
+        amount: line.substring(42, 57),
+        numberOfRecord052: line.substring(57, 68),
+        numberOfRecord022: line.substring(83, 94),
+    }
+}
+
+function parse002End(line) {
+    parsedBs.end = {
+        cvr: line.substring(5, 13),
+        subsystem: line.substring(13, 16),
+        deliveryType: line.substring(16, 20),
+        numberOfSections: line.substring(20, 31),
+        numberOf042: line.substring(31, 42),
+        amount: line.substring(42, 57),
+        numberOf052And062: line.substring(57, 68),
+        numberOf022: line.substring(83, 94),
+    }
 }
